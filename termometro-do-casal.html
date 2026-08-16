@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Termômetro do Casal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Work+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #FAF3EC;
+    --bg-soft: #F3E9DD;
+    --card: #FFFDFA;
+    --ink: #2B2019;
+    --ink-soft: #6B5D53;
+    --border: #E8DDD0;
+    --wine: #6B7A3A;
+    --wine-dark: #52611F;
+    --sage: #4F6B54;
+    --sage-bg: #E7EDE3;
+    --gold: #B98A3D;
+    --gold-bg: #F3E7D0;
+    --clay: #A85A3E;
+    --clay-bg: #F1DED2;
+    --radius: 18px;
+    --shadow: 0 8px 30px -12px rgba(43,32,25,0.25);
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0;
+    padding:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  body{
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding: 32px 16px 64px;
+  }
+
+  @media (min-width: 640px){
+    body{ align-items:center; padding: 48px 16px; }
+  }
+
+  .app{
+    width:100%;
+    max-width: 480px;
+    position: relative;
+  }
+
+  .eyebrow{
+    font-family:'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--wine);
+    font-weight: 700;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom: 14px;
+  }
+
+  .eyebrow::before{
+    content:'';
+    width: 8px; height:8px;
+    border-radius: 50%;
+    background: var(--wine);
+    display:inline-block;
+  }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(32px, 8vw, 44px);
+    line-height: 1.05;
+    margin: 0 0 14px;
+    letter-spacing: -0.01em;
+  }
+
+  .lede{
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin: 0 0 32px;
+    max-width: 42ch;
+  }
+
+  /* --- Thermometer signature element --- */
+  .thermo-wrap{
+    display:flex;
+    align-items:flex-end;
+    gap: 22px;
+    margin: 8px 0 30px;
+  }
+
+  .thermo{
+    width: 34px;
+    height: 150px;
+    border-radius: 20px;
+    background: var(--bg-soft);
+    border: 2px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .thermo-fill{
+    position:absolute;
+    bottom:0; left:0; right:0;
+    height: 4%;
+    background: linear-gradient(180deg, var(--clay), var(--wine));
+    border-radius: 0 0 18px 18px;
+    transition: height 0.6s cubic-bezier(.4,0,.2,1), background 0.6s ease;
+  }
+
+  .thermo-bulb{
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    background: var(--wine);
+    border: 2px solid var(--border);
+    margin-top: -18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: background 0.6s ease;
+    box-shadow: var(--shadow);
+  }
+
+  .thermo-bulb span{
+    font-family:'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .thermo-caption{
+    font-family:'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  .thermo-caption b{ color: var(--ink); }
+
+  /* --- Buttons --- */
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap: 10px;
+    width:100%;
+    padding: 18px 22px;
+    border-radius: 999px;
+    border: none;
+    background: var(--wine);
+    color: #fff;
+    font-family:'Work Sans', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    cursor:pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+
+  .btn:hover{ background: var(--wine-dark); }
+  .btn:active{ transform: scale(0.98); }
+  .btn:focus-visible{ outline: 3px solid var(--ink); outline-offset: 3px; }
+
+  .btn-arrow{ font-size: 18px; transition: transform 0.2s ease; }
+  .btn:hover .btn-arrow{ transform: translateX(3px); }
+
+  /* --- Cards / screens --- */
+  .screen{ display:none; }
+  .screen.active{ display:block; animation: rise 0.45s ease both; }
+
+  @keyframes rise{
+    from{ opacity:0; transform: translateY(10px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  .progress-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom: 22px;
+  }
+
+  .progress-label{
+    font-family:'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+  }
+
+  .progress-track{
+    flex:1;
+    height: 6px;
+    background: var(--bg-soft);
+    border-radius: 999px;
+    margin-left: 16px;
+    overflow:hidden;
+  }
+
+  .progress-bar{
+    height:100%;
+    background: var(--wine);
+    border-radius: 999px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  .question-card{
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .question-text{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 1.3;
+    margin: 0 0 24px;
+  }
+
+  .option{
+    display:flex;
+    align-items:flex-start;
+    gap: 14px;
+    width:100%;
+    text-align:left;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 16px;
+    margin-bottom: 12px;
+    cursor:pointer;
+    font-family:'Work Sans', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1.4;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  }
+
+  .option:last-child{ margin-bottom: 0; }
+
+  .option:hover{
+    border-color: var(--wine);
+    background: #fff;
+  }
+
+  .option:active{ transform: scale(0.99); }
+
+  .option:focus-visible{ outline: 3px solid var(--ink); outline-offset: 2px; }
+
+  .option-letter{
+    font-family:'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--wine);
+    background: var(--wine-bg, var(--gold-bg));
+    background: rgba(107,122,58,0.12);
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    margin-top: 1px;
+  }
+
+  /* --- Result screen --- */
+  .result-card{
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 34px 26px;
+    box-shadow: var(--shadow);
+    text-align:center;
+  }
+
+  .result-thermo-wrap{
+    display:flex;
+    justify-content:center;
+    margin-bottom: 22px;
+  }
+
+  .result-tag{
+    display:inline-block;
+    font-family:'Space Mono', monospace;
+    font-size: 12px;
+    font-weight:700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+
+  .result-title{
+    font-family:'Fraunces', serif;
+    font-weight: 700;
+    font-size: 28px;
+    line-height: 1.15;
+    margin: 0 0 16px;
+  }
+
+  .result-text{
+    font-size: 15.5px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 0 0 28px;
+    text-align:left;
+  }
+
+  .wa-btn{
+    background: #25703A;
+  }
+  .wa-btn:hover{ background: #1E5A2E; }
+
+  .footnote{
+    font-family:'Space Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    text-align:center;
+    margin-top: 22px;
+    line-height: 1.6;
+  }
+
+  .footnote a{ color: var(--wine); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- INTRO SCREEN -->
+  <section id="screen-intro" class="screen active">
+    <div class="eyebrow">Teste rápido · 2 minutos</div>
+    <h1>Termômetro<br>do Casal</h1>
+    <p class="lede">Comunicação, dinheiro, tempo juntos, filhos, intimidade — dez perguntas curtas pra vocês descobrirem, agora, o nível de alinhamento do casal.</p>
+
+    <div class="thermo-wrap">
+      <div class="thermo"><div class="thermo-fill" id="intro-fill" style="height:4%"></div></div>
+      <div class="thermo-caption">Cada resposta<br>move o ponteiro.<br><b>Vamos ver onde<br>vocês estão?</b></div>
+    </div>
+
+    <button class="btn" onclick="startQuiz()">Começar o teste <span class="btn-arrow">→</span></button>
+  </section>
+
+  <!-- QUIZ SCREEN -->
+  <section id="screen-quiz" class="screen">
+    <div class="progress-row">
+      <span class="progress-label" id="progress-label">01 / 10</span>
+      <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+    </div>
+    <div class="question-card">
+      <p class="question-text" id="question-text"></p>
+      <div id="options-wrap"></div>
+    </div>
+  </section>
+
+  <!-- RESULT SCREEN -->
+  <section id="screen-result" class="screen">
+    <div class="result-thermo-wrap">
+      <div class="thermo-wrap" style="margin:0;">
+        <div class="thermo"><div class="thermo-fill" id="result-fill"></div></div>
+        <div class="thermo-bulb" id="result-bulb"><span id="result-score"></span></div>
+      </div>
+    </div>
+    <div class="result-card">
+      <span class="result-tag" id="result-tag"></span>
+      <h2 class="result-title" id="result-title"></h2>
+      <p class="result-text" id="result-text"></p>
+      <p class="result-text" style="margin-bottom: 20px;">Toque no botão abaixo pra nos mandar uma mensagem — assim já deixamos tudo certo pra te avisar em primeira mão quando a Comunidade abrir. 💛</p>
+      <a class="btn wa-btn" id="wa-cta" href="#" target="_blank" rel="noopener">
+        Quero receber as novidades <span class="btn-arrow">→</span>
+      </a>
+    </div>
+    <p class="footnote">Feito com carinho pelo time do Casal Alinhado 💛</p>
+  </section>
+
+</div>
+
+<script>
+  // ============================================================
+  // CONFIGURAÇÃO — edite aqui
+  // ============================================================
+  // Número de WhatsApp no formato internacional, SOMENTE dígitos,
+  // com código do país (55) + DDD + número. Exemplo abaixo é fictício.
+  const WHATSAPP_NUMBER = "5549988130182";
+
+  const QUESTIONS = [
+    {
+      text: "Quando um de vocês está chateado, o que geralmente acontece?",
+      options: [
+        { letter: "A", text: "Um dos dois guarda pra si e o assunto só volta em uma discussão maior", score: 1 },
+        { letter: "B", text: "Conversam, mas às vezes de forma tensa ou incompleta", score: 2 },
+        { letter: "C", text: "Conseguem conversar abertamente, mesmo que seja difícil", score: 3 }
+      ]
+    },
+    {
+      text: "Como está o alinhamento financeiro do casal hoje?",
+      options: [
+        { letter: "A", text: "Cada um cuida do seu, sem muita conversa sobre isso", score: 1 },
+        { letter: "B", text: "Conversam sobre dinheiro, mas geram atrito com frequência", score: 2 },
+        { letter: "C", text: "Têm um planejamento conjunto e conversam com tranquilidade", score: 3 }
+      ]
+    },
+    {
+      text: "Com que frequência vocês têm um tempo só dos dois, sem celular, sem filhos, sem distração?",
+      options: [
+        { letter: "A", text: "Quase nunca", score: 1 },
+        { letter: "B", text: "De vez em quando, mas não é uma prioridade fixa", score: 2 },
+        { letter: "C", text: "Toda semana, é algo que os dois cuidam pra manter", score: 3 }
+      ]
+    },
+    {
+      text: "Depois de uma briga, como costuma terminar?",
+      options: [
+        { letter: "A", text: "Fica um clima estranho por dias", score: 1 },
+        { letter: "B", text: "Resolvem, mas o mesmo assunto sempre volta", score: 2 },
+        { letter: "C", text: "Conseguem se entender e seguir em frente sem mágoa acumulada", score: 3 }
+      ]
+    },
+    {
+      text: "Vocês têm clareza sobre os planos de longo prazo (filhos, casa, mudança, carreira)?",
+      options: [
+        { letter: "A", text: "Nunca paramos pra conversar sobre isso de verdade", score: 1 },
+        { letter: "B", text: "Já conversamos, mas não é algo revisitado", score: 2 },
+        { letter: "C", text: "Revisitamos e ajustamos os planos juntos com frequência", score: 3 }
+      ]
+    },
+    {
+      text: "Como é a divisão das responsabilidades de casa/família?",
+      options: [
+        { letter: "A", text: "Um dos dois sente que carrega mais peso que o outro", score: 1 },
+        { letter: "B", text: "Existe divisão, mas nem sempre parece justa", score: 2 },
+        { letter: "C", text: "Sentem que a divisão é equilibrada e bem conversada", score: 3 }
+      ]
+    },
+    {
+      text: "Quando um dos dois está passando por um momento difícil, o outro:",
+      options: [
+        { letter: "A", text: "Muitas vezes nem percebe ou não sabe como ajudar", score: 1 },
+        { letter: "B", text: "Percebe, mas às vezes não sabe exatamente o que fazer", score: 2 },
+        { letter: "C", text: "Está presente e sabe como apoiar de verdade", score: 3 }
+      ]
+    },
+    {
+      text: "Como está a conexão afetiva/intimidade do casal atualmente?",
+      options: [
+        { letter: "A", text: "Meio distante, cada um na sua rotina", score: 1 },
+        { letter: "B", text: "Existe, mas poderia ser mais cultivada", score: 2 },
+        { letter: "C", text: "É algo que os dois cuidam ativamente", score: 3 }
+      ]
+    },
+    {
+      text: "Sobre a criação dos filhos (ou planos para isso), vocês estão:",
+      options: [
+        { letter: "A", text: "Com visões bem diferentes que ainda não foram bem conversadas", score: 1 },
+        { letter: "B", text: "Alinhados na maior parte, mas com alguns pontos de tensão", score: 2 },
+        { letter: "C", text: "Bastante alinhados sobre como querem criar/educar", score: 3 }
+      ]
+    },
+    {
+      text: "Se você tivesse que resumir o momento do casal hoje em uma palavra, seria mais perto de:",
+      options: [
+        { letter: "A", text: "\u201cSobrevivendo\u201d", score: 1 },
+        { letter: "B", text: "\u201cEstável\u201d", score: 2 },
+        { letter: "C", text: "\u201cConectados\u201d", score: 3 }
+      ]
+    }
+  ];
+
+  const RESULTS = {
+    construction: {
+      min: 10, max: 16,
+      tag: "Casal em construção",
+      tagBg: "var(--clay-bg)", tagColor: "var(--clay)",
+      fillColor: "var(--clay)",
+      title: "Vocês estão em construção — e está tudo bem",
+      text: "Isso não é ruim, é só um sinal de que existem pontos importantes pra alinhar antes que virem ressentimento. A boa notícia é que casais que reconhecem isso cedo têm muito mais chance de transformar a relação. É exatamente esse o caminho que trabalhamos com vocês."
+    },
+    sync: {
+      min: 17, max: 23,
+      tag: "Casal em sintonia",
+      tagBg: "var(--gold-bg)", tagColor: "var(--gold)",
+      fillColor: "var(--gold)",
+      title: "Vocês já têm uma base boa",
+      text: "Mas alguns pontos ainda pedem atenção pra não virarem distância no futuro. Casais em sintonia como vocês costumam dar o salto pra um alinhamento mais profundo quando têm as ferramentas certas — e é isso que queremos te mostrar."
+    },
+    aligned: {
+      min: 24, max: 30,
+      tag: "Casal alinhado",
+      tagBg: "var(--sage-bg)", tagColor: "var(--sage)",
+      fillColor: "var(--sage)",
+      title: "Parabéns — vocês estão entre os mais alinhados",
+      text: "Isso é raro e vale muito a pena ser cultivado, porque alinhamento não é destino, é rotina. Casais como vocês são exatamente o perfil que mais aproveita a nossa comunidade, porque já têm a base pra ir ainda mais fundo juntos."
+    }
+  };
+
+  let currentIndex = 0;
+  let totalScore = 0;
+
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function startQuiz(){
+    currentIndex = 0;
+    totalScore = 0;
+    showScreen('screen-quiz');
+    renderQuestion();
+  }
+
+  function renderQuestion(){
+    const q = QUESTIONS[currentIndex];
+    document.getElementById('question-text').textContent = q.text;
+    document.getElementById('progress-label').textContent =
+      String(currentIndex + 1).padStart(2, '0') + ' / 10';
+    document.getElementById('progress-bar').style.width =
+      ((currentIndex) / QUESTIONS.length * 100) + '%';
+
+    const wrap = document.getElementById('options-wrap');
+    wrap.innerHTML = '';
+    q.options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.setAttribute('type', 'button');
+      btn.innerHTML = '<span class="option-letter">' + opt.letter + '</span><span>' + opt.text + '</span>';
+      btn.onclick = () => selectAnswer(opt.score);
+      wrap.appendChild(btn);
+    });
+  }
+
+  function selectAnswer(score){
+    totalScore += score;
+    currentIndex++;
+    if (currentIndex < QUESTIONS.length){
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  }
+
+  function showResult(){
+    let band;
+    if (totalScore <= 16) band = RESULTS.construction;
+    else if (totalScore <= 23) band = RESULTS.sync;
+    else band = RESULTS.aligned;
+
+    document.getElementById('progress-bar').style.width = '100%';
+
+    const tagEl = document.getElementById('result-tag');
+    tagEl.textContent = band.tag;
+    tagEl.style.background = band.tagBg;
+    tagEl.style.color = band.tagColor;
+
+    document.getElementById('result-title').textContent = band.title;
+    document.getElementById('result-text').textContent = band.text;
+
+    const fillPct = Math.round(((totalScore - 10) / (30 - 10)) * 100);
+    const fillEl = document.getElementById('result-fill');
+    fillEl.style.height = fillPct + '%';
+    fillEl.style.background = band.fillColor;
+
+    document.getElementById('result-bulb').style.background = band.fillColor;
+    document.getElementById('result-score').textContent = totalScore;
+
+    const message = "Oi! Acabei de fazer o Termômetro do Casal e nosso resultado foi \"" + band.tag + "\" (" + totalScore + "/30 pontos). Quero entrar na lista de novidades da Comunidade! 💛";
+    const waLink = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(message);
+    document.getElementById('wa-cta').href = waLink;
+
+    showScreen('screen-result');
+  }
+</script>
+
+</body>
+</html>
