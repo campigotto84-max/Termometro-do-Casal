@@ -306,6 +306,38 @@
     margin-bottom: 14px;
   }
 
+  .lead-fields{
+    margin-bottom: 18px;
+  }
+
+  .lead-input{
+    display:block;
+    width:100%;
+    padding: 15px 16px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    font-family: 'Work Sans', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+
+  .lead-input::placeholder{ color: var(--ink-soft); }
+
+  .lead-input:focus{
+    outline: none;
+    border-color: var(--wine);
+  }
+
+  .lead-error{
+    font-family:'Work Sans', sans-serif;
+    font-size: 13px;
+    color: var(--clay);
+    margin: -4px 0 12px;
+    min-height: 16px;
+  }
+
   .result-title{
     font-family:'Fraunces', serif;
     font-weight: 700;
@@ -358,6 +390,12 @@
       <div class="thermo-caption">Cada resposta<br>move o ponteiro.<br><b>Vamos ver onde<br>vocês estão?</b></div>
     </div>
 
+    <div class="lead-fields">
+      <input type="text" id="lead-name" class="lead-input" placeholder="Seu nome" autocomplete="given-name">
+      <input type="tel" id="lead-whatsapp" class="lead-input" placeholder="WhatsApp com DDD (ex: 49999998888)" autocomplete="tel">
+      <p class="lead-error" id="lead-error"></p>
+    </div>
+
     <button class="btn" onclick="startQuiz()">Começar o teste <span class="btn-arrow">→</span></button>
   </section>
 
@@ -385,12 +423,12 @@
       <span class="result-tag" id="result-tag"></span>
       <h2 class="result-title" id="result-title"></h2>
       <p class="result-text" id="result-text"></p>
-      <p class="result-text" style="margin-bottom: 20px;">Toque no botão abaixo pra nos mandar uma mensagem — assim já deixamos tudo certo pra te avisar em primeira mão quando a Comunidade abrir. 💛</p>
+      <p class="result-text" style="margin-bottom: 20px;">Toque no botão abaixo pra nos mandar uma mensagem — assim já deixamos tudo certo pra te avisar em primeira mão quando a Comunidade abrir. ∞</p>
       <a class="btn wa-btn" id="wa-cta" href="#" target="_blank" rel="noopener">
         Quero receber as novidades <span class="btn-arrow">→</span>
       </a>
     </div>
-    <p class="footnote">Feito com carinho pelo time do Casal Alinhado 💛</p>
+    <p class="footnote">Feito com carinho pelo time do Casal Alinhado ∞</p>
   </section>
 
 </div>
@@ -402,6 +440,13 @@
   // Número de WhatsApp no formato internacional, SOMENTE dígitos,
   // com código do país (55) + DDD + número. Exemplo abaixo é fictício.
   const WHATSAPP_NUMBER = "5549988130182";
+
+  // Cole aqui a URL do seu Google Apps Script (Web App), depois de
+  // seguir o passo a passo de configuração da planilha.
+  const SHEET_WEBHOOK_URL = "";
+
+  let leadName = "";
+  let leadWhatsapp = "";
 
   const QUESTIONS = [
     {
@@ -522,6 +567,28 @@
   }
 
   function startQuiz(){
+    const nameInput = document.getElementById('lead-name');
+    const waInput = document.getElementById('lead-whatsapp');
+    const errorEl = document.getElementById('lead-error');
+
+    const name = nameInput.value.trim();
+    const wa = waInput.value.replace(/\D/g, '');
+
+    if (name.length < 2){
+      errorEl.textContent = 'Por favor, digite seu nome.';
+      nameInput.focus();
+      return;
+    }
+    if (wa.length < 10){
+      errorEl.textContent = 'Digite um WhatsApp válido, com DDD.';
+      waInput.focus();
+      return;
+    }
+
+    errorEl.textContent = '';
+    leadName = name;
+    leadWhatsapp = wa;
+
     currentIndex = 0;
     totalScore = 0;
     showScreen('screen-quiz');
@@ -582,9 +649,26 @@
     document.getElementById('result-bulb').style.background = band.fillColor;
     document.getElementById('result-score').textContent = totalScore;
 
-    const message = "Oi! Acabei de fazer o Termômetro do Casal e nosso resultado foi \"" + band.tag + "\" (" + totalScore + "/30 pontos). Quero entrar na lista de novidades da Comunidade! 💛";
+    const firstName = leadName.split(' ')[0];
+    const message = "Oi! Aqui é " + leadName + ". Acabei de fazer o Termômetro do Casal e nosso resultado foi \"" + band.tag + "\" (" + totalScore + "/30 pontos). Quero entrar na lista de novidades da Comunidade! ∞";
     const waLink = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(message);
     document.getElementById('wa-cta').href = waLink;
+
+    // Envia o resultado para a planilha automaticamente, independente
+    // de a pessoa clicar no botão do WhatsApp ou não.
+    if (SHEET_WEBHOOK_URL){
+      fetch(SHEET_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          nome: leadName,
+          whatsapp: leadWhatsapp,
+          pontuacao: totalScore,
+          perfil: band.tag,
+          data: new Date().toISOString()
+        })
+      }).catch(() => { /* falha silenciosa: não trava a experiência da pessoa */ });
+    }
 
     showScreen('screen-result');
   }
